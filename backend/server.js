@@ -8,7 +8,7 @@ dotenv.config();
 const PORT = process.env.PORT || 5000; // Using port 8080 as an example
 
 app.get("/", (req, res) => {
-  res.send("Hello World");
+  res.send("Hello World hyyy");
 });
 
 app.use("/api/auth", authRoutes);
