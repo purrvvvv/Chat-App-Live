@@ -48,7 +48,9 @@ const SignUp = () => {
                         </label>
                         <input type='text' placeholder='johndoe' className='w-full input input-bordered h-10'
                         value={inputs.username}
+
                         //expanding inputs and only changing one value
+
                         onChange={(e) => setInputs({ ...inputs, username: e.target.value })} />
                     </div>
 
@@ -86,7 +88,11 @@ const SignUp = () => {
                     </Link>
 
                     <div>
-                        <button className='btn btn-block btn-sm mt-2 border border-slate-700 hover:bg-blue-600'>Sign Up</button>
+                        <button className='btn btn-block btn-sm mt-2 border border-slate-700 hover:bg-blue-600'
+                        disabled={loading}
+                        >
+                            {loading ? <span className="loading loading-spinner"></span> : "Sign Up"}
+                        </button>
                     </div>
                 </form>
             </div>
