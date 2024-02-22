@@ -18,6 +18,7 @@ const SignUp = () => {
     const handleCheckboxChange = (gender) => {
 		setInputs({ ...inputs, gender });
 	};
+    
     const handleSubmit = async (e) => {
 		e.preventDefault();
         await signup(inputs);
@@ -64,7 +65,9 @@ const SignUp = () => {
                             className='w-full input input-bordered h-10'
                             value={inputs.password}
                             //expanding inputs and only changing one value
-							onChange={(e) => setInputs({ ...inputs, password: e.target.value })}
+                            onChange={(e) => setInputs({ ...inputs, password: e.target.value })}
+                            
+							
                         />
                     </div>
 
