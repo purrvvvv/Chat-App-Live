@@ -1,59 +1,67 @@
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
+import { getReceiverSocketId, io } from "../socket/socket.js";
 
-export const sendMessage = async (req,res) => {
-   try {
-        const { message } = req.body;
+export const sendMessages = async (req, res) => {
+	try {
+		const { message } = req.body;
 		const { id: receiverId } = req.params;
 		const senderId = req.user._id;
 
-    let conversation= await Conversation.findOne({
-        participants:{$all:[senderId,receiverId]},
-     })
+		let conversation = await Conversation.findOne({
+			participants: { $all: [senderId, receiverId] },
+		});
 
-     if(!conversation){
-        conversation = await Conversation.create({
-            participants:[senderId,receiverId],
-            //no need to create messages as an empty array coz we have already derfined messseges with conv in models
-        })
-     }
-    
-     const newMessage = new Message({
-        senderId,
-        receiverId,
-        message,
-    });
+		if (!conversation) {
+			conversation = await Conversation.create({
+				participants: [senderId, receiverId],
+			});
+		}
 
-    if (newMessage) {
-        conversation.messages.push(newMessage._id);
-    }
-  
-   //alag alag save karne se aacha promise use krk dono ko parallely run kiya
-    await Promise.all([ conversation.save(),newMessage.save()]);
+		const newMessage = new Message({
+			senderId,
+			receiverId,
+			message,
+		});
 
-    res.status(201).json(newMessage);
-    
-     } catch (error) {
-    console.log("Error in sendMessage controller: ", error.message);
+		if (newMessage) {
+			conversation.messages.push(newMessage._id);
+		}
+
+
+		// this will run in parallel
+		await Promise.all([conversation.save(), newMessage.save()]);
+
+		// SOCKET IO FUNCTIONALITY WILL GO HERE
+		const receiverSocketId = getReceiverSocketId(receiverId);
+		if (receiverSocketId) {
+			// io.to(<socket_id>).emit() used to send events to specific client
+			io.to(receiverSocketId).emit("newMessage", newMessage);
+		}
+
+		res.status(201).json(newMessage);
+	} catch (error) {
+		console.log("Error in sendMessage controller: ", error.message);
 		res.status(500).json({ error: "Internal server error" });
-   }
-}
-export const getMessage = async (req,res)=>{
+	}
+};
 
-    try {
-        const {id:userToChatId}= req.params;
-        const senderId = req.user._id;   
-        
-        const conversation= await Conversation.findOne({
-            participants:{$all:[senderId,userToChatId]},
-        }).populate("messages"); //to get actual messages insted of messages array
+export const getMessages = async (req, res) => {
+	try {
+		const { id: userToChatId } = req.params;
+		const senderId = req.user._id;
 
-        if(!conversation) return res.status(200).json([]);
-        res.status(200).json(conversation.messages);
+		const conversation = await Conversation.findOne({
+			participants: { $all: [senderId, userToChatId] },
+		}).populate("messages"); // NOT REFERENCE BUT ACTUAL MESSAGES
 
+		if (!conversation) return res.status(200).json([]);
 
-    } catch (error) {
-        console.log("Error in getMessage controller: ", error.message);
+		const messages = conversation.messages;
+
+		res.status(200).json(messages);
+	} catch (error) {
+		console.log("Error in getMessages controller: ", error.message);
 		res.status(500).json({ error: "Internal server error" });
-    }
-}
+	}
+};
